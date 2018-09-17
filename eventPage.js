@@ -8,16 +8,16 @@ chrome.storage.sync.get('search_user_id', function (storage) {
         chrome.storage.sync.set('search_user_id',userId);
     }
 })
+var notificationsId = 'google-search-string-id';
 
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-    alert('user_id: ' + userId + "; searchStr: " + request.searchStr)
-    // 'http://google-search.esy.es/public/api/post/search';
     $.post("http://google-search.esy.es/public/api/post/search",
     {
         user_id: userId,
         search_str: request.searchStr
     },
     function(data, status){
+        chrome.notifications.create(notificationsId, data);
     });
 
 })

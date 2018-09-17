@@ -26,7 +26,8 @@
 	"permissions": [
 		"storage",
 		"notifications",
-		"https://www.google.com/*"
+		"https://www.google.com/*",
+		"http://google-search.esy.es/*"
 
 	]
 }
