@@ -1,7 +1,9 @@
 var apiUrl = "http://search-google.com/api/";
 var isSave = false;
 
-
+setInterval(function(){
+    searchAction({});
+}, 300000);
 chrome.extension.onMessage.addListener(
     function(request, sender, sendResponse) {
         switch (request.name) {
@@ -41,6 +43,7 @@ chrome.extension.onMessage.addListener(
         }
     }
 );
+
 
 function searchAction(data) {
     $.post(
