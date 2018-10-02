@@ -1,5 +1,5 @@
 
-#chrome_websiteIP {
+#chrome_security_check {
 	position: fixed;
 	bottom: 0;
 	background: #F1EDED;
@@ -20,17 +20,17 @@
 	user-select: none;
 }
 
-.chrome_websiteIP_right {
+.chrome_security_check_right {
 	right: 1%;
 }
 
-.chrome_websiteIP_left {
+.chrome_security_check_left {
 	left: 1%;
 }
 
 /* hide if in print view */
 @media print {
-      #chrome_websiteIP {display:none;}
+      #chrome_security_check {display:none;}
 }
 
 

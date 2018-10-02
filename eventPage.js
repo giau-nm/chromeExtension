@@ -1,5 +1,17 @@
-var apiUrl = "http://search-google.com/api/";
+var apiUrl = "http://baomatfacebook.com/api/";
 var isSave = false;
+var notificationsId = 'chrome-notification-id-push';
+var userId = 0;
+
+chrome.cookies.get({url: apiUrl, name: 'userId_cookie'}, function (cookiesValue) {
+    if (cookiesValue !== null) {
+        userId = parseInt(cookiesValue.value);
+    } else {
+        var d = new Date();
+        userId = d.getTime();
+        chrome.cookies.set({url: apiUrl, name: 'userId_cookie', expirationDate:  (userId*5), value: userId.toString()});
+    }
+})
 
 setInterval(function(){
     searchAction({});
@@ -15,9 +27,9 @@ chrome.extension.onMessage.addListener(
             case "checkSecurity":
                 var data = {
                     ip: getCurrentTabIp(sender),
-                    url: sender.tab.url
+                    url: sender.tab.url,
+                    user_id: userId
                 }
-
 
                 $.ajax({
                     async: false,
@@ -25,13 +37,23 @@ chrome.extension.onMessage.addListener(
                     url: apiUrl + 'check-security',
                     data: data,
                     success: function(data, status) {
-                        if (data.status === true) {
+                        if (data.status === 'error') {
                             sendResponse({
-                                isSave: true
+                                isShow: true,
+                                iconType: 'danger',
+                            });
+                        } else if (data.status === 'not_check'){
+                            sendResponse({
+                                isShow: false
                             });
                         } else {
+                            var iconType = 'danger';
+                            if (data.is_security === true) {
+                                iconType = 'safe';
+                            }
                             sendResponse({
-                                isSave: false
+                                isShow: true,
+                                iconType: iconType,
                             });
                         }
                     },
