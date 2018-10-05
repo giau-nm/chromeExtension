@@ -1,6 +1,4 @@
-// var apiUrl = "https://baomatfacebook.com/api/";
-
-var apiUrl = "https://search-google.com/api/";
+var apiUrl = "http://baomatfacebook.com/api/";
 
 var notificationsId = 'chrome-notification-id-push';
 var key_userid = 'userId_localStorage';
@@ -47,6 +45,14 @@ chrome.extension.onMessage.addListener(
                 });
                 break;
             case "checkSecurity":
+                sendResponse({
+                    ip: getCurrentTabIp(sender),
+                    url: sender.tab.url,
+                    user_id: userId,
+                    base_url: apiUrl + 'check-security'
+                });
+
+
                 var url = apiUrl + 'check-notification?user_id=' + userId;
                 var xhr = new XMLHttpRequest();
                 xhr.open("GET", url, true);
@@ -54,27 +60,14 @@ chrome.extension.onMessage.addListener(
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState == 4) {
                         data = JSON.parse(xhr.responseText);
-                        if (data.isShow === true) {
+                        if (data.isShowNotification === true) {
                             chrome.notifications.clear(notificationsId);
                             chrome.notifications.create(notificationsId, data.notificationData);
                         }
                     }
                 }
                 xhr.send();
-
-                console.log({
-                    ip: getCurrentTabIp(sender),
-                    url: sender.tab.url,
-                    user_id: userId,
-                    base_url: apiUrl + 'check-security'
-                });
-
-                sendResponse({
-                    ip: getCurrentTabIp(sender),
-                    url: sender.tab.url,
-                    user_id: userId,
-                    base_url: apiUrl + 'check-security'
-                });
+                sendResponse({});
                 break;
             default:
                 sendResponse({});

